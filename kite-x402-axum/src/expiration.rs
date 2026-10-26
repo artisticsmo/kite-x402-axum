@@ -6,16 +6,41 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use thiserror::Error;
 
+/// Errors produced when validating a payment authorization's time window.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum ExpirationError {
     #[error("payment authorization has expired (validBefore: {valid_before}, now: {now})")]
-    Expired { valid_before: u64, now: u64 },
+    /// The authorization's `validBefore` timestamp has passed.
+    Expired {
+        /// The `validBefore` timestamp (Unix seconds).
+        valid_before: u64,
+        /// The current time (Unix seconds).
+        now: u64,
+    },
     #[error("payment authorization is not yet active (validAfter: {valid_after}, now: {now})")]
-    NotYetValid { valid_after: u64, now: u64 },
+    /// The authorization's `validAfter` timestamp has not been reached yet.
+    NotYetValid {
+        /// The `validAfter` timestamp (Unix seconds).
+        valid_after: u64,
+        /// The current time (Unix seconds).
+        now: u64,
+    },
     #[error("payment authorization validity window is inverted (validAfter: {valid_after} > validBefore: {valid_before})")]
-    InvertedWindow { valid_after: u64, valid_before: u64 },
+    /// `validAfter` is later than `validBefore`, so the window is empty.
+    InvertedWindow {
+        /// The `validAfter` timestamp (Unix seconds).
+        valid_after: u64,
+        /// The `validBefore` timestamp (Unix seconds).
+        valid_before: u64,
+    },
     #[error("payment authorization expires too soon for settlement (remaining: {remaining}s < min: {min_required}s)")]
-    InsufficientRemainingValidity { remaining: u64, min_required: u64 },
+    /// The authorization will expire before settlement can reasonably complete.
+    InsufficientRemainingValidity {
+        /// Seconds of validity remaining.
+        remaining: u64,
+        /// Minimum number of seconds required.
+        min_required: u64,
+    },
 }
 
 /// Configuration options for validating payment authorization timestamps.
@@ -39,6 +64,8 @@ impl Default for ExpirationGuardConfig {
 }
 
 impl ExpirationGuardConfig {
+    /// Creates a config with the given clock-drift tolerance and minimum remaining validity, both in seconds.
+    #[must_use]
     pub fn new(max_drift_seconds: u64, min_remaining_validity_seconds: u64) -> Self {
         Self {
             max_drift_seconds,

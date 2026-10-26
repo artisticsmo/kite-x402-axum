@@ -21,7 +21,7 @@ use axum::{
 
 /// CORS configuration for the service.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum CorsConfig {
+pub(crate) enum CorsConfig {
     /// CORS disabled (default).
     Disabled,
     /// Allow any origin (`*`).
@@ -32,37 +32,37 @@ pub enum CorsConfig {
 
 impl CorsConfig {
     /// Parse `CORS_ORIGIN` environment variable into a [`CorsConfig`].
-    pub fn from_env(value: Option<&str>) -> Self {
+    pub(crate) fn from_env(value: Option<&str>) -> Self {
         let val = match value {
             Some(v) if !v.trim().is_empty() => v.trim(),
-            _ => return CorsConfig::Disabled,
+            _ => return Self::Disabled,
         };
 
         if val == "*" {
-            CorsConfig::Wildcard
+            Self::Wildcard
         } else {
             let origins: Vec<String> = val
                 .split(',')
-                .map(|s| s.trim().trim_end_matches('/').to_string())
+                .map(|s| s.trim().trim_end_matches('/').to_owned())
                 .filter(|s| !s.is_empty())
                 .collect();
             if origins.is_empty() {
-                CorsConfig::Disabled
+                Self::Disabled
             } else {
-                CorsConfig::Origins(origins)
+                Self::Origins(origins)
             }
         }
     }
 
     /// Check if the incoming request origin is allowed.
-    pub fn match_origin(&self, origin: &str) -> Option<String> {
+    pub(crate) fn match_origin(&self, origin: &str) -> Option<String> {
         match self {
-            CorsConfig::Disabled => None,
-            CorsConfig::Wildcard => Some("*".to_string()),
-            CorsConfig::Origins(allowed) => {
+            Self::Disabled => None,
+            Self::Wildcard => Some("*".to_owned()),
+            Self::Origins(allowed) => {
                 let trimmed = origin.trim_end_matches('/');
                 if allowed.iter().any(|o| o == trimmed) {
-                    Some(origin.to_string())
+                    Some(origin.to_owned())
                 } else {
                     None
                 }
@@ -71,13 +71,13 @@ impl CorsConfig {
     }
 
     /// Whether CORS is enabled.
-    pub fn is_enabled(&self) -> bool {
-        !matches!(self, CorsConfig::Disabled)
+    pub(crate) fn is_enabled(&self) -> bool {
+        !matches!(self, Self::Disabled)
     }
 }
 
 /// Axum middleware for handling CORS preflights and attaching access control headers.
-pub async fn cors_middleware(
+pub(crate) async fn cors_middleware(
     State(cors): State<Arc<CorsConfig>>,
     req: Request,
     next: Next,
@@ -90,7 +90,7 @@ pub async fn cors_middleware(
         .headers()
         .get(header::ORIGIN)
         .and_then(|v| v.to_str().ok())
-        .map(|s| s.to_string());
+        .map(|s| s.to_owned());
 
     let is_options = req.method() == Method::OPTIONS;
     let matched_origin = origin_header.as_deref().and_then(|o| cors.match_origin(o));
@@ -188,7 +188,7 @@ mod tests {
         let wildcard = CorsConfig::Wildcard;
         assert_eq!(
             wildcard.match_origin("https://foo.com"),
-            Some("*".to_string())
+            Some("*".to_owned())
         );
 
         let specific = CorsConfig::Origins(vec![
@@ -197,11 +197,11 @@ mod tests {
         ]);
         assert_eq!(
             specific.match_origin("https://app.example.com"),
-            Some("https://app.example.com".to_string())
+            Some("https://app.example.com".to_owned())
         );
         assert_eq!(
             specific.match_origin("http://localhost:3000/"),
-            Some("http://localhost:3000/".to_string())
+            Some("http://localhost:3000/".to_owned())
         );
         assert_eq!(specific.match_origin("https://unauthorized.org"), None);
     }

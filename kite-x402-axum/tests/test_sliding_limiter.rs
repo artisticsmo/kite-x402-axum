@@ -1,3 +1,5 @@
+//! Integration tests for the sliding-window rate limiter.
+
 use kite_x402_axum::sliding_limiter::{SlidingWindowConfig, SlidingWindowLimiter};
 use std::time::Duration;
 

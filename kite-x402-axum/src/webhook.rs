@@ -7,22 +7,34 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum WebhookEventType {
+    /// A payment challenge (402) was issued.
     PaymentPrompted,
+    /// A payment was verified.
     PaymentVerified,
+    /// A payment was settled on-chain.
     PaymentSettled,
+    /// A payment failed verification or settlement.
     PaymentFailed,
 }
 
 /// A dispatched webhook event payload.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebhookPayload {
+    /// Unique identifier of the event.
     pub event_id: String,
+    /// Kind of event.
     pub event_type: WebhookEventType,
+    /// Event time in Unix milliseconds.
     pub timestamp_ms: u64,
+    /// Address of the payer, if known.
     pub payer: Option<String>,
+    /// Network identifier (CAIP-2), if known.
     pub network: Option<String>,
+    /// Amount in atomic token units, if known.
     pub amount_atomic: Option<String>,
+    /// Settlement transaction hash, if any.
     pub tx_hash: Option<String>,
+    /// Path of the request that triggered the event.
     pub request_path: Option<String>,
 }
 
@@ -30,33 +42,51 @@ pub struct WebhookPayload {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DeliveryStatus {
+    /// Waiting for its first or next delivery attempt.
     Pending,
+    /// Delivered successfully.
     Delivered,
+    /// The latest attempt failed; a retry may follow.
     Failed,
+    /// Retries exhausted; delivery was given up.
     Abandoned,
 }
 
 /// Record of an external webhook delivery attempt.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebhookDeliveryRecord {
+    /// Unique identifier of this delivery.
     pub delivery_id: u64,
+    /// Endpoint the payload is delivered to.
     pub target_url: String,
+    /// The payload being delivered.
     pub payload: WebhookPayload,
+    /// Number of attempts made so far.
     pub attempts: u32,
+    /// Maximum number of retries allowed.
     pub max_retries: u32,
+    /// Current delivery status.
     pub status: DeliveryStatus,
+    /// HTTP status code of the last attempt, if any.
     pub last_status_code: Option<u16>,
+    /// Error message of the last attempt, if any.
     pub last_error: Option<String>,
+    /// Time of the last attempt in Unix milliseconds.
     pub last_attempt_ms: Option<u64>,
 }
 
 /// Configuration for webhook dispatcher.
 #[derive(Debug, Clone)]
 pub struct WebhookConfig {
+    /// Endpoints to deliver events to.
     pub target_urls: Vec<String>,
+    /// Maximum number of retries per delivery.
     pub max_retries: u32,
+    /// Delay before the first retry; later retries back off from this.
     pub initial_backoff: Duration,
+    /// Maximum number of queued deliveries retained.
     pub max_queue_size: usize,
+    /// Optional secret used to sign delivery payloads.
     pub signing_secret: Option<String>,
 }
 
@@ -87,6 +117,8 @@ struct WebhookState {
 }
 
 impl WebhookDispatcher {
+    /// Creates a dispatcher with the given configuration.
+    #[must_use]
     pub fn new(config: WebhookConfig) -> Self {
         Self {
             config,
@@ -99,6 +131,7 @@ impl WebhookDispatcher {
     }
 
     /// Enqueues a payment lifecycle event for all registered webhook targets.
+    #[must_use]
     pub fn enqueue_event(
         &self,
         event_type: WebhookEventType,
@@ -155,6 +188,7 @@ impl WebhookDispatcher {
     }
 
     /// Records the result of a delivery attempt.
+    #[must_use]
     pub fn record_attempt_result(
         &self,
         delivery_id: u64,
@@ -204,12 +238,14 @@ impl WebhookDispatcher {
     }
 
     /// Number of pending deliveries in queue.
+    #[must_use]
     pub fn pending_count(&self) -> usize {
         let state = self.state.read().expect("lock poisoned");
         state.queue.len()
     }
 
     /// Number of completed deliveries in history.
+    #[must_use]
     pub fn history_count(&self) -> usize {
         let state = self.state.read().expect("lock poisoned");
         state.history.len()
@@ -222,7 +258,7 @@ fn fastrand_hex(len: usize) -> String {
     let mut hasher = DefaultHasher::new();
     SystemTime::now().hash(&mut hasher);
     let val = hasher.finish();
-    format!("{:016x}", val)[..len.min(16)].to_string()
+    format!("{val:016x}")[..len.min(16)].to_string()
 }
 
 #[cfg(test)]

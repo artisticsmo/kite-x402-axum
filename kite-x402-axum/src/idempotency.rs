@@ -31,8 +31,11 @@ impl Default for IdempotencyConfig {
 /// A cached HTTP response recorded for an idempotency key.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CachedResponse {
+    /// HTTP status code of the cached response.
     pub status: u16,
+    /// Response headers as name/value pairs.
     pub headers: Vec<(String, String)>,
+    /// Raw response body bytes.
     pub body: Vec<u8>,
 }
 
@@ -67,11 +70,13 @@ pub struct IdempotencyCache {
 
 impl IdempotencyCache {
     /// Creates a cache with default configuration.
+    #[must_use]
     pub fn new() -> Self {
         Self::with_config(IdempotencyConfig::default())
     }
 
     /// Creates a cache with custom configuration.
+    #[must_use]
     pub fn with_config(config: IdempotencyConfig) -> Self {
         Self {
             config,
@@ -80,6 +85,7 @@ impl IdempotencyCache {
     }
 
     /// Attempts to acquire an execution lease for the given idempotency key.
+    #[must_use]
     pub fn acquire(&self, key: &str) -> AcquireResult {
         let mut entries = self.entries.lock().expect("idempotency cache poisoned");
         let now = Instant::now();
@@ -116,7 +122,7 @@ impl IdempotencyCache {
             });
         }
 
-        entries.insert(key.to_string(), Entry::InProgress { started_at: now });
+        entries.insert(key.to_owned(), Entry::InProgress { started_at: now });
         AcquireResult::Acquired
     }
 
@@ -124,7 +130,7 @@ impl IdempotencyCache {
     pub fn complete(&self, key: &str, status: u16, headers: Vec<(String, String)>, body: Vec<u8>) {
         let mut entries = self.entries.lock().expect("idempotency cache poisoned");
         entries.insert(
-            key.to_string(),
+            key.to_owned(),
             Entry::Completed {
                 response: CachedResponse {
                     status,
@@ -145,6 +151,7 @@ impl IdempotencyCache {
     }
 
     /// Returns the number of tracked entries.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.entries
             .lock()
@@ -153,6 +160,7 @@ impl IdempotencyCache {
     }
 
     /// Returns whether the cache is empty.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }

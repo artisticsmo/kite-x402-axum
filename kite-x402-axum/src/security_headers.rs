@@ -26,9 +26,9 @@ impl Default for SecurityHeadersConfig {
     fn default() -> Self {
         Self {
             content_type_options: true,
-            frame_options: Some("DENY".to_string()),
-            xss_protection: Some("0".to_string()),
-            referrer_policy: Some("no-referrer".to_string()),
+            frame_options: Some("DENY".to_owned()),
+            xss_protection: Some("0".to_owned()),
+            referrer_policy: Some("no-referrer".to_owned()),
             hsts_max_age_secs: Some(31_536_000), // 1 year
             prevent_receipt_caching: true,
         }

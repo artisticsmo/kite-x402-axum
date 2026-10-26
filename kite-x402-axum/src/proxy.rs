@@ -96,6 +96,7 @@ impl std::fmt::Debug for UpstreamConfig {
 /// and stops at any other. When it stops, the upstream's `3xx` response is
 /// handed back to the buyer unchanged, so the credential never leaves the
 /// host it was configured for.
+#[must_use]
 pub fn same_origin_redirect_policy() -> reqwest::redirect::Policy {
     reqwest::redirect::Policy::custom(|attempt| {
         if attempt.previous().len() >= MAX_REDIRECTS {
@@ -175,7 +176,7 @@ pub async fn proxy(State(cfg): State<Arc<UpstreamConfig>>, req: Request) -> Resp
         .path_and_query()
         .map(|pq| pq.as_str())
         .unwrap_or("/")
-        .to_string();
+        .to_owned();
 
     if has_dot_segment(&path_and_query) {
         tracing::warn!(path = %path_and_query, "Rejected request with dot segments in the path");
@@ -195,7 +196,7 @@ pub async fn proxy(State(cfg): State<Arc<UpstreamConfig>>, req: Request) -> Resp
         strip_v1_prefix(&path_and_query)
     };
     let forwarded = if forwarded.starts_with('/') {
-        forwarded.to_string()
+        forwarded.to_owned()
     } else {
         format!("/{forwarded}")
     };
@@ -350,9 +351,9 @@ mod tests {
     fn cfg(auth_value: &str) -> UpstreamConfig {
         UpstreamConfig {
             http: reqwest::Client::new(),
-            base_url: "http://127.0.0.1:1".to_string(), // nothing listens here
-            auth_header: "X-Api-Key".to_string(),
-            auth_value: auth_value.to_string(),
+            base_url: "http://127.0.0.1:1".to_owned(), // nothing listens here
+            auth_header: "X-Api-Key".to_owned(),
+            auth_value: auth_value.to_owned(),
         }
     }
 

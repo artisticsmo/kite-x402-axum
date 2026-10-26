@@ -10,6 +10,10 @@ readme = "README.md"
 keywords = ["x402", "axum", "kite", "payments", "middleware"]
 categories = ["web-programming::http-server", "network-programming"]
 
+[lints]
+workspace = true
+
+
 [dependencies]
 # Kept minimal: this is a middleware/proxy library, not a server. Consumers
 # that call `axum::serve` (see `service/`) pull in "http1"/"tokio" themselves.

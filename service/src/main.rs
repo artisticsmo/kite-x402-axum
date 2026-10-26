@@ -62,7 +62,7 @@ async fn main() {
     let upstream_url = env::var("UPSTREAM_URL")
         .expect("UPSTREAM_URL is required (the API being wrapped)")
         .trim_end_matches('/')
-        .to_string();
+        .to_owned();
     let price_usd = env_or("PRICE_USD", "0.001");
     let network_name = env_or("KITE_NETWORK", "mainnet");
     let chain = kite_chain_by_name(&network_name)
@@ -351,6 +351,7 @@ async fn metrics_x402_handler(
     Json(metrics.snapshot())
 }
 
+/// Process-wide request counters exposed on the metrics endpoint.
 #[derive(Debug)]
 pub struct ServiceMetrics {
     start_time: Instant,
@@ -368,6 +369,8 @@ impl Default for ServiceMetrics {
 }
 
 impl ServiceMetrics {
+    /// Creates metrics with all counters at zero.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             start_time: Instant::now(),
@@ -379,6 +382,7 @@ impl ServiceMetrics {
         }
     }
 
+    /// Returns a JSON snapshot of the current counters.
     pub fn snapshot(&self) -> serde_json::Value {
         json!({
             "status": "ok",
@@ -392,9 +396,12 @@ impl ServiceMetrics {
     }
 }
 
+/// RAII guard that tracks an in-flight request in [`ServiceMetrics`].
+#[derive(Debug)]
 pub struct ActiveRequestGuard(Arc<ServiceMetrics>);
 
 impl ActiveRequestGuard {
+    /// Increments the active-request gauge; it is decremented when the guard is dropped.
     pub fn new(metrics: Arc<ServiceMetrics>) -> Self {
         metrics.active_requests.fetch_add(1, Ordering::SeqCst);
         Self(metrics)
@@ -424,7 +431,7 @@ async fn http_request_logger(
         .get("x-request-id")
         .and_then(|h| h.to_str().ok())
         .filter(|s| is_valid_request_id(s))
-        .map(|s| s.to_string())
+        .map(|s| s.to_owned())
         .unwrap_or_else(generate_request_id);
 
     if let Ok(val) = axum::http::HeaderValue::from_str(&request_id) {
@@ -505,10 +512,14 @@ async fn http_request_logger(
     response
 }
 
+/// Configuration for the security-headers middleware.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SecurityHeadersConfig {
+    /// Whether security headers are added to responses.
     pub enabled: bool,
+    /// Value of the `Content-Security-Policy` header.
     pub csp: String,
+    /// Value of the `Referrer-Policy` header.
     pub referrer_policy: String,
 }
 
@@ -516,12 +527,13 @@ impl Default for SecurityHeadersConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            csp: "default-src 'none'; frame-ancestors 'none'".to_string(),
-            referrer_policy: "strict-origin-when-cross-origin".to_string(),
+            csp: "default-src 'none'; frame-ancestors 'none'".to_owned(),
+            referrer_policy: "strict-origin-when-cross-origin".to_owned(),
         }
     }
 }
 
+/// Axum middleware that adds standard security headers to every response.
 pub async fn security_headers_middleware(
     axum::extract::State(cfg): axum::extract::State<Arc<SecurityHeadersConfig>>,
     req: Request,
@@ -622,8 +634,8 @@ async fn readyz(
 
 fn env_or(key: &str, fallback: &str) -> String {
     match env::var(key) {
-        Ok(v) if !v.trim().is_empty() => v.trim().to_string(),
-        _ => fallback.to_string(),
+        Ok(v) if !v.trim().is_empty() => v.trim().to_owned(),
+        _ => fallback.to_owned(),
     }
 }
 
@@ -902,8 +914,8 @@ mod tests {
 
         let cfg = Arc::new(SecurityHeadersConfig {
             enabled: true,
-            csp: "default-src 'self'".to_string(),
-            referrer_policy: "no-referrer".to_string(),
+            csp: "default-src 'self'".to_owned(),
+            referrer_policy: "no-referrer".to_owned(),
         });
         let app = Router::new().route("/test", get(|| async { "ok" })).layer(
             middleware::from_fn_with_state(cfg, security_headers_middleware),

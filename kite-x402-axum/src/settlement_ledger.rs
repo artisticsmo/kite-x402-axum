@@ -10,21 +10,32 @@ use std::sync::{Arc, Mutex};
 /// An immutable record of an x402 payment settlement event.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SettlementRecord {
+    /// Transaction hash of the settlement.
     pub tx_hash: String,
+    /// Address of the payer.
     pub payer: String,
+    /// Address that received the payment.
     pub pay_to: String,
+    /// Amount in atomic token units.
     pub amount: u64,
+    /// Network identifier (CAIP-2).
     pub network: String,
+    /// Unix timestamp in seconds.
     pub timestamp_secs: u64,
+    /// Whether the settlement succeeded.
     pub success: bool,
+    /// Failure reason, if the settlement failed.
     pub error_reason: Option<String>,
 }
 
 /// Aggregate summary statistics of recorded settlements.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LedgerSummary {
+    /// Sum of the amounts of all successful settlements.
     pub total_settled_volume: u64,
+    /// Number of successful settlements.
     pub successful_count: u64,
+    /// Number of failed settlements.
     pub failed_count: u64,
 }
 
@@ -47,6 +58,7 @@ pub struct SettlementLedger {
 
 impl SettlementLedger {
     /// Creates a new ledger with a maximum capacity.
+    #[must_use]
     pub fn new(max_records: usize) -> Self {
         Self {
             inner: Arc::new(Mutex::new(Inner {
@@ -93,12 +105,14 @@ impl SettlementLedger {
     }
 
     /// Retrieves a settlement record by its transaction hash.
+    #[must_use]
     pub fn get_by_tx(&self, tx_hash: &str) -> Option<SettlementRecord> {
         let inner = self.inner.lock().expect("settlement ledger mutex poisoned");
         inner.by_tx.get(tx_hash).cloned()
     }
 
     /// Returns all records for a given payer address.
+    #[must_use]
     pub fn find_by_payer(&self, payer: &str) -> Vec<SettlementRecord> {
         let inner = self.inner.lock().expect("settlement ledger mutex poisoned");
         inner
@@ -109,6 +123,7 @@ impl SettlementLedger {
     }
 
     /// Returns aggregate summary metrics.
+    #[must_use]
     pub fn summary(&self) -> LedgerSummary {
         let inner = self.inner.lock().expect("settlement ledger mutex poisoned");
         LedgerSummary {
@@ -119,12 +134,14 @@ impl SettlementLedger {
     }
 
     /// Number of entries currently stored in the ledger.
+    #[must_use]
     pub fn len(&self) -> usize {
         let inner = self.inner.lock().expect("settlement ledger mutex poisoned");
         inner.records.len()
     }
 
     /// Whether the ledger is empty.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }

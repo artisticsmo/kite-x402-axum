@@ -12,7 +12,11 @@ use thiserror::Error;
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum CircuitBreakerError {
     #[error("facilitator circuit breaker is open (cooling down for {retry_after_secs}s)")]
-    CircuitOpen { retry_after_secs: u64 },
+    /// The circuit is open and calls are being rejected.
+    CircuitOpen {
+        /// Seconds remaining until the breaker may transition to half-open.
+        retry_after_secs: u64,
+    },
 }
 
 /// The three states of the circuit breaker.
@@ -68,20 +72,27 @@ pub struct CircuitBreaker {
 /// Snapshot of circuit breaker runtime metrics.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CircuitBreakerSnapshot {
+    /// Current breaker state.
     pub state: CircuitState,
+    /// Number of consecutive failures recorded.
     pub consecutive_failures: u32,
+    /// Number of consecutive successes recorded.
     pub consecutive_successes: u32,
+    /// Total number of calls rejected while the circuit was open.
     pub total_rejected: u64,
+    /// Total number of times the breaker has tripped open.
     pub total_trips: u64,
 }
 
 impl CircuitBreaker {
     /// Creates a new circuit breaker with default settings.
+    #[must_use]
     pub fn new() -> Self {
         Self::with_config(CircuitBreakerConfig::default())
     }
 
     /// Creates a new circuit breaker with custom settings.
+    #[must_use]
     pub fn with_config(config: CircuitBreakerConfig) -> Self {
         Self {
             config,
@@ -105,8 +116,7 @@ impl CircuitBreaker {
         let now = Instant::now();
 
         match inner.state {
-            CircuitState::Closed => Ok(()),
-            CircuitState::HalfOpen => Ok(()),
+            CircuitState::Closed | CircuitState::HalfOpen => Ok(()),
             CircuitState::Open => {
                 let elapsed = now.duration_since(inner.last_state_change);
                 if elapsed >= self.config.recovery_timeout {
@@ -165,6 +175,7 @@ impl CircuitBreaker {
     }
 
     /// Current circuit state.
+    #[must_use]
     pub fn state(&self) -> CircuitState {
         let mut inner = self.inner.lock().expect("circuit breaker mutex poisoned");
         if inner.state == CircuitState::Open {
@@ -179,6 +190,7 @@ impl CircuitBreaker {
     }
 
     /// Takes a snapshot of current metrics.
+    #[must_use]
     pub fn snapshot(&self) -> CircuitBreakerSnapshot {
         let inner = self.inner.lock().expect("circuit breaker mutex poisoned");
         CircuitBreakerSnapshot {
