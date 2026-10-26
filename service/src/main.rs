@@ -61,7 +61,8 @@ async fn main() {
     let pay_to = env::var("PAY_TO").expect("PAY_TO is required (the wallet that receives payment)");
     let upstream_url = env::var("UPSTREAM_URL")
         .expect("UPSTREAM_URL is required (the API being wrapped)")
-        .trim_end_matches('/').to_owned();
+        .trim_end_matches('/')
+        .to_owned();
     let price_usd = env_or("PRICE_USD", "0.001");
     let network_name = env_or("KITE_NETWORK", "mainnet");
     let chain = kite_chain_by_name(&network_name)
@@ -369,7 +370,7 @@ impl Default for ServiceMetrics {
 
 impl ServiceMetrics {
     /// Creates metrics with all counters at zero.
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         Self {
             start_time: Instant::now(),

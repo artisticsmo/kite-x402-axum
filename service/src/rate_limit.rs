@@ -161,7 +161,11 @@ impl TokenBucketRateLimiter {
         }
     }
 
-    pub(crate) fn acquire(&self, client_ip: IpAddr, now: Instant) -> Result<u64, RateLimitRejection> {
+    pub(crate) fn acquire(
+        &self,
+        client_ip: IpAddr,
+        now: Instant,
+    ) -> Result<u64, RateLimitRejection> {
         let client_ip = normalize_ip(client_ip);
         let mut store = self.buckets.lock().unwrap();
         // Bound maintenance work as well as memory during a burst of new clients.
@@ -186,7 +190,9 @@ impl TokenBucketRateLimiter {
         // Concurrent callers can obtain timestamps in a different order than the lock.
         let now = now.max(bucket.last_refill);
         let elapsed = now.duration_since(bucket.last_refill).as_secs_f64();
-        bucket.tokens = elapsed.mul_add(self.config.rps, bucket.tokens).min(self.config.burst);
+        bucket.tokens = elapsed
+            .mul_add(self.config.rps, bucket.tokens)
+            .min(self.config.burst);
         bucket.last_refill = now;
         let result = if bucket.tokens >= 1.0 {
             bucket.tokens -= 1.0;

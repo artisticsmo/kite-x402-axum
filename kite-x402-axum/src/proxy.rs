@@ -96,7 +96,7 @@ impl std::fmt::Debug for UpstreamConfig {
 /// and stops at any other. When it stops, the upstream's `3xx` response is
 /// handed back to the buyer unchanged, so the credential never leaves the
 /// host it was configured for.
-#[must_use] 
+#[must_use]
 pub fn same_origin_redirect_policy() -> reqwest::redirect::Policy {
     reqwest::redirect::Policy::custom(|attempt| {
         if attempt.previous().len() >= MAX_REDIRECTS {
@@ -175,7 +175,8 @@ pub async fn proxy(State(cfg): State<Arc<UpstreamConfig>>, req: Request) -> Resp
         .uri()
         .path_and_query()
         .map(|pq| pq.as_str())
-        .unwrap_or("/").to_owned();
+        .unwrap_or("/")
+        .to_owned();
 
     if has_dot_segment(&path_and_query) {
         tracing::warn!(path = %path_and_query, "Rejected request with dot segments in the path");

@@ -325,7 +325,8 @@ async fn same_origin_redirects_are_followed() {
                 let key = headers
                     .get("x-api-key")
                     .and_then(|v| v.to_str().ok())
-                    .unwrap_or("-").to_owned();
+                    .unwrap_or("-")
+                    .to_owned();
                 (StatusCode::OK, format!("done:{key}")).into_response()
             }),
         );

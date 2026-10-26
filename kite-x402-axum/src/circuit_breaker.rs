@@ -86,13 +86,13 @@ pub struct CircuitBreakerSnapshot {
 
 impl CircuitBreaker {
     /// Creates a new circuit breaker with default settings.
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         Self::with_config(CircuitBreakerConfig::default())
     }
 
     /// Creates a new circuit breaker with custom settings.
-    #[must_use] 
+    #[must_use]
     pub fn with_config(config: CircuitBreakerConfig) -> Self {
         Self {
             config,
@@ -175,7 +175,7 @@ impl CircuitBreaker {
     }
 
     /// Current circuit state.
-    #[must_use] 
+    #[must_use]
     pub fn state(&self) -> CircuitState {
         let mut inner = self.inner.lock().expect("circuit breaker mutex poisoned");
         if inner.state == CircuitState::Open {
@@ -190,7 +190,7 @@ impl CircuitBreaker {
     }
 
     /// Takes a snapshot of current metrics.
-    #[must_use] 
+    #[must_use]
     pub fn snapshot(&self) -> CircuitBreakerSnapshot {
         let inner = self.inner.lock().expect("circuit breaker mutex poisoned");
         CircuitBreakerSnapshot {

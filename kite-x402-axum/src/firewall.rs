@@ -32,7 +32,7 @@ pub enum FirewallRule {
 
 impl FirewallRule {
     /// Creates a CIDR subnet rule for IPv4.
-    #[must_use] 
+    #[must_use]
     pub fn subnet_v4(network: Ipv4Addr, prefix: u8) -> Self {
         Self::SubnetV4 {
             network,
@@ -41,7 +41,7 @@ impl FirewallRule {
     }
 
     /// Checks if a client IP matches this rule.
-    #[must_use] 
+    #[must_use]
     pub fn matches(&self, client_ip: &IpAddr) -> bool {
         match (self, client_ip) {
             (Self::Exact(rule_ip), ip) => rule_ip == ip,
@@ -88,7 +88,7 @@ pub struct IpFirewall {
 
 impl IpFirewall {
     /// Creates a new firewall with the given configuration.
-    #[must_use] 
+    #[must_use]
     pub fn new(config: IpFirewallConfig) -> Self {
         Self {
             config: Arc::new(RwLock::new(config)),
@@ -96,7 +96,7 @@ impl IpFirewall {
     }
 
     /// Evaluates whether an incoming IP is allowed or denied.
-    #[must_use] 
+    #[must_use]
     pub fn evaluate(&self, ip: &IpAddr) -> IpFilterAction {
         let config = self.config.read().expect("firewall rwlock poisoned");
 
@@ -122,7 +122,7 @@ impl IpFirewall {
     }
 
     /// Helper that returns true if the IP is allowed.
-    #[must_use] 
+    #[must_use]
     pub fn is_allowed(&self, ip: &IpAddr) -> bool {
         self.evaluate(ip) == IpFilterAction::Allow
     }

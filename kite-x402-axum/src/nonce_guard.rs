@@ -142,7 +142,7 @@ impl Default for PaymentNonceReplayGuard {
 
 impl PaymentNonceReplayGuard {
     /// Creates a guard holding up to `max_capacity` authorizations, each retained for `ttl_seconds`.
-    #[must_use] 
+    #[must_use]
     pub fn new(max_capacity: usize, ttl_seconds: u64) -> Self {
         Self {
             max_capacity: max_capacity.max(1),

@@ -31,7 +31,7 @@ pub struct CorsSecurityGuard {
 
 impl CorsSecurityGuard {
     /// Creates a guard that allows exactly the given origins.
-    #[must_use] 
+    #[must_use]
     pub fn new(allowed_origins: Vec<impl Into<String>>) -> Self {
         let mut origins = HashSet::new();
         for o in allowed_origins {
@@ -46,7 +46,7 @@ impl CorsSecurityGuard {
     }
 
     /// Returns `true` if `origin` is on the allow-list.
-    #[must_use] 
+    #[must_use]
     pub fn is_origin_allowed(&self, origin: &str) -> bool {
         if self.config.allowed_origins.contains("*") {
             return true;
@@ -55,7 +55,7 @@ impl CorsSecurityGuard {
     }
 
     /// Returns the CORS headers to attach for `origin`, or `None` if it is not allowed.
-    #[must_use] 
+    #[must_use]
     pub fn get_cors_headers(&self, origin: &str) -> Option<Vec<(&'static str, String)>> {
         if !self.is_origin_allowed(origin) {
             return None;

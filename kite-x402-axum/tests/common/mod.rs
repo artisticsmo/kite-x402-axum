@@ -38,7 +38,8 @@ use tower::ServiceExt;
 
 pub(crate) const PAY_TO: &str = "0xC0FFEE0000000000000000000000000000C0FFEE";
 pub(crate) const PAYER: &str = "0xPayer0000000000000000000000000000000000";
-pub(crate) const TX_HASH: &str = "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
+pub(crate) const TX_HASH: &str =
+    "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
 
 /// Ordered log of which mock was hit, shared by facilitator and upstream so
 /// tests can assert `verify -> upstream -> settle`.
@@ -446,7 +447,12 @@ pub(crate) fn get_req(uri: &str) -> Request<Body> {
     Request::builder().uri(uri).body(Body::empty()).unwrap()
 }
 
-pub(crate) fn req_with(method: &str, uri: &str, headers: &[(&str, &str)], body: Vec<u8>) -> Request<Body> {
+pub(crate) fn req_with(
+    method: &str,
+    uri: &str,
+    headers: &[(&str, &str)],
+    body: Vec<u8>,
+) -> Request<Body> {
     let mut b = Request::builder().method(method).uri(uri);
     for (k, v) in headers {
         b = b.header(*k, *v);

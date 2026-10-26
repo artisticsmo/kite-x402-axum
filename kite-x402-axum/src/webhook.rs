@@ -118,7 +118,7 @@ struct WebhookState {
 
 impl WebhookDispatcher {
     /// Creates a dispatcher with the given configuration.
-    #[must_use] 
+    #[must_use]
     pub fn new(config: WebhookConfig) -> Self {
         Self {
             config,
@@ -131,7 +131,7 @@ impl WebhookDispatcher {
     }
 
     /// Enqueues a payment lifecycle event for all registered webhook targets.
-    #[must_use] 
+    #[must_use]
     pub fn enqueue_event(
         &self,
         event_type: WebhookEventType,
@@ -188,7 +188,7 @@ impl WebhookDispatcher {
     }
 
     /// Records the result of a delivery attempt.
-    #[must_use] 
+    #[must_use]
     pub fn record_attempt_result(
         &self,
         delivery_id: u64,
@@ -238,14 +238,14 @@ impl WebhookDispatcher {
     }
 
     /// Number of pending deliveries in queue.
-    #[must_use] 
+    #[must_use]
     pub fn pending_count(&self) -> usize {
         let state = self.state.read().expect("lock poisoned");
         state.queue.len()
     }
 
     /// Number of completed deliveries in history.
-    #[must_use] 
+    #[must_use]
     pub fn history_count(&self) -> usize {
         let state = self.state.read().expect("lock poisoned");
         state.history.len()

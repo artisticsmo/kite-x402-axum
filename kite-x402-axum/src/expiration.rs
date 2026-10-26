@@ -65,7 +65,7 @@ impl Default for ExpirationGuardConfig {
 
 impl ExpirationGuardConfig {
     /// Creates a config with the given clock-drift tolerance and minimum remaining validity, both in seconds.
-    #[must_use] 
+    #[must_use]
     pub fn new(max_drift_seconds: u64, min_remaining_validity_seconds: u64) -> Self {
         Self {
             max_drift_seconds,

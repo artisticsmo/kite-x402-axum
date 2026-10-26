@@ -58,7 +58,7 @@ pub struct SettlementLedger {
 
 impl SettlementLedger {
     /// Creates a new ledger with a maximum capacity.
-    #[must_use] 
+    #[must_use]
     pub fn new(max_records: usize) -> Self {
         Self {
             inner: Arc::new(Mutex::new(Inner {
@@ -105,14 +105,14 @@ impl SettlementLedger {
     }
 
     /// Retrieves a settlement record by its transaction hash.
-    #[must_use] 
+    #[must_use]
     pub fn get_by_tx(&self, tx_hash: &str) -> Option<SettlementRecord> {
         let inner = self.inner.lock().expect("settlement ledger mutex poisoned");
         inner.by_tx.get(tx_hash).cloned()
     }
 
     /// Returns all records for a given payer address.
-    #[must_use] 
+    #[must_use]
     pub fn find_by_payer(&self, payer: &str) -> Vec<SettlementRecord> {
         let inner = self.inner.lock().expect("settlement ledger mutex poisoned");
         inner
@@ -123,7 +123,7 @@ impl SettlementLedger {
     }
 
     /// Returns aggregate summary metrics.
-    #[must_use] 
+    #[must_use]
     pub fn summary(&self) -> LedgerSummary {
         let inner = self.inner.lock().expect("settlement ledger mutex poisoned");
         LedgerSummary {
@@ -134,14 +134,14 @@ impl SettlementLedger {
     }
 
     /// Number of entries currently stored in the ledger.
-    #[must_use] 
+    #[must_use]
     pub fn len(&self) -> usize {
         let inner = self.inner.lock().expect("settlement ledger mutex poisoned");
         inner.records.len()
     }
 
     /// Whether the ledger is empty.
-    #[must_use] 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }

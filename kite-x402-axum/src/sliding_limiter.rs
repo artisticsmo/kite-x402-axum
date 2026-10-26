@@ -31,7 +31,7 @@ pub struct SlidingWindowLimiter {
 
 impl SlidingWindowLimiter {
     /// Creates a limiter with the given configuration.
-    #[must_use] 
+    #[must_use]
     pub fn new(config: SlidingWindowConfig) -> Self {
         Self {
             config,

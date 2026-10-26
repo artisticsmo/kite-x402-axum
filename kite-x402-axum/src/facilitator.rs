@@ -37,7 +37,7 @@ impl Default for RetryConfig {
 
 impl RetryConfig {
     /// Creates a new retry configuration.
-    #[must_use] 
+    #[must_use]
     pub fn new(max_retries: u32, initial_backoff: Duration, max_backoff: Duration) -> Self {
         Self {
             max_retries,
@@ -47,7 +47,7 @@ impl RetryConfig {
     }
 
     /// Calculates backoff duration for the given 0-indexed attempt using exponential backoff.
-    #[must_use] 
+    #[must_use]
     pub fn calculate_backoff(&self, attempt: u32) -> Duration {
         let factor = 2u64.saturating_pow(attempt);
         let backoff = self.initial_backoff.saturating_mul(factor as u32);
@@ -100,19 +100,19 @@ struct FacilitatorRequest<'a> {
 
 impl FacilitatorClient {
     /// Returns the facilitator base URL.
-    #[must_use] 
+    #[must_use]
     pub fn base_url(&self) -> &str {
         &self.base_url
     }
 
     /// Returns the active retry configuration.
-    #[must_use] 
+    #[must_use]
     pub fn retry_config(&self) -> RetryConfig {
         self.retry_config
     }
 
     /// Sets retry configuration using a builder pattern.
-    #[must_use] 
+    #[must_use]
     pub fn with_retry_config(mut self, config: RetryConfig) -> Self {
         self.retry_config = config;
         self
@@ -645,7 +645,9 @@ mod tests {
                         ("verify", status, "upstream said no")
                     );
                 }
-                other @ FacilitatorError::Request(_) => panic!("expected BadResponse, got {other:?}"),
+                other @ FacilitatorError::Request(_) => {
+                    panic!("expected BadResponse, got {other:?}")
+                }
             }
             match client
                 .settle(&payload(), &requirements())
@@ -659,7 +661,9 @@ mod tests {
                 } => {
                     assert_eq!((op, s, body.as_str()), ("settle", status, "settle said no"));
                 }
-                other @ FacilitatorError::Request(_) => panic!("expected BadResponse, got {other:?}"),
+                other @ FacilitatorError::Request(_) => {
+                    panic!("expected BadResponse, got {other:?}")
+                }
             }
         }
     }
@@ -726,7 +730,9 @@ mod tests {
             .unwrap_err();
         match err {
             FacilitatorError::Request(e) => assert!(e.is_connect(), "{e}"),
-            other @ FacilitatorError::BadResponse { .. } => panic!("expected Request, got {other:?}"),
+            other @ FacilitatorError::BadResponse { .. } => {
+                panic!("expected Request, got {other:?}")
+            }
         }
     }
 
@@ -745,7 +751,9 @@ mod tests {
         assert!(started.elapsed() < Duration::from_millis(500));
         match err {
             FacilitatorError::Request(e) => assert!(e.is_timeout(), "{e}"),
-            other @ FacilitatorError::BadResponse { .. } => panic!("expected Request, got {other:?}"),
+            other @ FacilitatorError::BadResponse { .. } => {
+                panic!("expected Request, got {other:?}")
+            }
         }
     }
 
@@ -864,7 +872,9 @@ mod tests {
             .unwrap_err();
         match err {
             FacilitatorError::BadResponse { status, .. } => assert_eq!(status, 400),
-            other @ FacilitatorError::Request(_) => panic!("expected BadResponse 400, got: {other:?}"),
+            other @ FacilitatorError::Request(_) => {
+                panic!("expected BadResponse 400, got: {other:?}")
+            }
         }
         assert_eq!(fake.seen().len(), 1);
     }
@@ -883,7 +893,9 @@ mod tests {
             .unwrap_err();
         match err {
             FacilitatorError::BadResponse { status, .. } => assert_eq!(status, 503),
-            other @ FacilitatorError::Request(_) => panic!("expected BadResponse 503, got: {other:?}"),
+            other @ FacilitatorError::Request(_) => {
+                panic!("expected BadResponse 503, got: {other:?}")
+            }
         }
         assert_eq!(fake.seen().len(), 1);
     }

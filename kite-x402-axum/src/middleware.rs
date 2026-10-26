@@ -68,7 +68,7 @@ impl PaymentConfig {
     }
 
     /// Enables validation of the authorization's validity window.
-    #[must_use] 
+    #[must_use]
     pub fn with_expiration_guard(
         mut self,
         guard: crate::expiration::ExpirationGuardConfig,
@@ -221,7 +221,7 @@ pub async fn x402_payment(
         .get("PAYMENT-SIGNATURE")
         .or_else(|| req.headers().get("X-PAYMENT"))
         .and_then(|v| v.to_str().ok())
-        .map(str::to_string);
+        .map(str::to_owned);
 
     let Some(header_value) = header_value else {
         tracing::info!(
@@ -863,7 +863,8 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::PAYMENT_REQUIRED);
         let err = decode_header(&resp, "PAYMENT-REQUIRED")["error"]
             .as_str()
-            .unwrap().to_owned();
+            .unwrap()
+            .to_owned();
         assert!(err.starts_with("facilitator verify unavailable: "), "{err}");
         assert_eq!(reached.load(Ordering::SeqCst), 0);
     }

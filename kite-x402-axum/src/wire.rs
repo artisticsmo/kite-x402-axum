@@ -13,7 +13,7 @@ use crate::types::{PaymentPayload, PaymentRequired, SettleResponse};
 pub struct WireError;
 
 /// Encodes a `PaymentRequired` body as the `PAYMENT-REQUIRED` header value.
-#[must_use] 
+#[must_use]
 pub fn encode_payment_required(pr: &PaymentRequired) -> String {
     STANDARD.encode(serde_json::to_vec(pr).expect("PaymentRequired always serializes"))
 }
@@ -45,7 +45,7 @@ pub fn decode_payment_payload(header_value: &str) -> Result<PaymentPayload, Wire
 }
 
 /// Encodes a `SettleResponse` as the `PAYMENT-RESPONSE` header value.
-#[must_use] 
+#[must_use]
 pub fn encode_settle_response(sr: &SettleResponse) -> String {
     STANDARD.encode(serde_json::to_vec(sr).expect("SettleResponse always serializes"))
 }

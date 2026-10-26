@@ -46,7 +46,7 @@ pub struct PaymentMetricsSnapshot {
 
 impl PaymentMetrics {
     /// Creates a new metrics collector with zeroed counters.
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }

@@ -28,7 +28,7 @@ pub struct VerificationCacheStore {
 
 impl VerificationCacheStore {
     /// Creates a cache whose entries expire after `default_ttl` unless overridden on insert.
-    #[must_use] 
+    #[must_use]
     pub fn new(default_ttl: Duration) -> Self {
         Self {
             default_ttl,
