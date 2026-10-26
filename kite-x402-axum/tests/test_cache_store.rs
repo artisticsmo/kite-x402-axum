@@ -1,3 +1,5 @@
+//! Integration tests for the verification cache store.
+
 use kite_x402_axum::cache_store::VerificationCacheStore;
 use std::time::Duration;
 

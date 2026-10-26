@@ -1,3 +1,5 @@
+//! Integration tests for the CORS security guard.
+
 use kite_x402_axum::cors_guard::CorsSecurityGuard;
 
 #[test]

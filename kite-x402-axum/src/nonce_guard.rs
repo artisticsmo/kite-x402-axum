@@ -13,11 +13,17 @@ use thiserror::Error;
 
 use crate::types::PaymentPayload;
 
+/// Errors produced by the payment nonce replay guard.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum NonceReplayError {
     #[error("payment signature/nonce has already been used: {nonce}")]
-    ReplayDetected { nonce: String },
+    /// The authorization was already used (the nonce is redacted in errors).
+    ReplayDetected {
+        /// Redacted identifier of the replayed nonce.
+        nonce: String,
+    },
     #[error("payment replay protection cache is full")]
+    /// The replay-protection cache has no room for another authorization.
     CapacityExceeded,
 }
 
@@ -96,6 +102,16 @@ impl PaymentNonceReservation<'_> {
     }
 }
 
+// Manual `Debug` so the replay key (derived from the payment authorization)
+// is never written to logs.
+impl std::fmt::Debug for PaymentNonceReservation<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PaymentNonceReservation")
+            .field("retain", &self.retain)
+            .finish_non_exhaustive()
+    }
+}
+
 impl Drop for PaymentNonceReservation<'_> {
     fn drop(&mut self) {
         let mut store = self.guard.store.lock().unwrap();
@@ -125,6 +141,8 @@ impl Default for PaymentNonceReplayGuard {
 }
 
 impl PaymentNonceReplayGuard {
+    /// Creates a guard holding up to `max_capacity` authorizations, each retained for `ttl_seconds`.
+    #[must_use] 
     pub fn new(max_capacity: usize, ttl_seconds: u64) -> Self {
         Self {
             max_capacity: max_capacity.max(1),
@@ -146,9 +164,9 @@ impl PaymentNonceReplayGuard {
         self.reserve_key(Self::authorization_key(payload), Instant::now())
             .map_err(|error| match error {
                 NonceReplayError::ReplayDetected { .. } => NonceReplayError::ReplayDetected {
-                    nonce: "[redacted]".to_string(),
+                    nonce: "[redacted]".to_owned(),
                 },
-                other => other,
+                other @ NonceReplayError::CapacityExceeded => other,
             })
     }
 
@@ -222,20 +240,20 @@ impl PaymentNonceReplayGuard {
         if let Some(auth) = payload.payload.get("authorization") {
             if let Some(nonce) = auth.get("nonce") {
                 if let Some(s) = nonce.as_str() {
-                    return s.to_string();
+                    return s.to_owned();
                 }
                 return nonce.to_string();
             }
         }
         if let Some(nonce) = payload.payload.get("nonce") {
             if let Some(s) = nonce.as_str() {
-                return s.to_string();
+                return s.to_owned();
             }
             return nonce.to_string();
         }
         if let Some(sig) = payload.payload.get("signature") {
             if let Some(s) = sig.as_str() {
-                return s.to_string();
+                return s.to_owned();
             }
         }
         payload.payload.to_string()
@@ -246,7 +264,7 @@ impl PaymentNonceReplayGuard {
     /// Unlike [`Self::reserve`], this API cannot release known failed operations.
     /// Returns [`NonceReplayError::CapacityExceeded`] rather than evicting a live key.
     pub fn check_and_record(&self, nonce: &str) -> Result<(), NonceReplayError> {
-        let mut reservation = self.reserve_key(nonce.to_string(), Instant::now())?;
+        let mut reservation = self.reserve_key(nonce.to_owned(), Instant::now())?;
         reservation.retain_on_drop();
         Ok(())
     }
@@ -257,6 +275,7 @@ impl PaymentNonceReplayGuard {
         self.store.lock().unwrap().entries.len()
     }
 
+    /// Returns `true` if the guard holds no entries.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -526,9 +545,8 @@ mod tests {
         let mut payload = payment();
         payload.payload = json!({"signature":"private-signature"});
         let _first = guard.reserve(&payload).unwrap();
-        let error = match guard.reserve(&payload) {
-            Err(error) => error,
-            Ok(_) => panic!("duplicate accepted"),
+        let Err(error) = guard.reserve(&payload) else {
+            panic!("duplicate accepted");
         };
         for text in [
             error.to_string(),

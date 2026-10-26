@@ -47,6 +47,7 @@ pub struct PaymentConfig {
 }
 
 impl PaymentConfig {
+    /// Creates a payment config with no optional guards or metrics enabled.
     pub fn new(
         pay_to: impl Into<String>,
         chain: KiteChain,
@@ -66,6 +67,8 @@ impl PaymentConfig {
         }
     }
 
+    /// Enables validation of the authorization's validity window.
+    #[must_use] 
     pub fn with_expiration_guard(
         mut self,
         guard: crate::expiration::ExpirationGuardConfig,
@@ -74,11 +77,15 @@ impl PaymentConfig {
         self
     }
 
+    /// Records payment events into the given metrics collector.
+    #[must_use]
     pub fn with_metrics(mut self, metrics: Arc<crate::metrics::PaymentMetrics>) -> Self {
         self.metrics = Some(metrics);
         self
     }
 
+    /// Enables replay protection using the given nonce guard.
+    #[must_use]
     pub fn with_nonce_guard(
         mut self,
         guard: Arc<crate::nonce_guard::PaymentNonceReplayGuard>,
@@ -93,8 +100,8 @@ impl PaymentConfig {
             .parse_price(&self.price_usd)
             .map_err(|e| format!("invalid PRICE_USD configured on the server: {e}"))?;
         Ok(PaymentRequirements {
-            scheme: "exact".to_string(),
-            network: self.chain.network.to_string(),
+            scheme: "exact".to_owned(),
+            network: self.chain.network.to_owned(),
             amount: asset.amount,
             asset: asset.asset,
             pay_to: self.pay_to.clone(),
@@ -116,7 +123,7 @@ fn payment_required_response(
         resource: ResourceInfo {
             url: resource_url,
             description: Some(description),
-            mime_type: Some("application/json".to_string()),
+            mime_type: Some("application/json".to_owned()),
         },
         accepts: vec![requirements],
     };
@@ -242,23 +249,20 @@ pub async fn x402_payment(
         "Payment signature header present; decoding payload"
     );
 
-    let payload = match decode_payment_payload(&header_value) {
-        Ok(p) => p,
-        Err(_) => {
-            tracing::warn!(
-                uri = %resource_url,
-                "Failed to decode payment signature header; returning 402"
-            );
-            if let Some(metrics) = &cfg.metrics {
-                metrics.record_challenge();
-            }
-            return payment_required_response(
-                requirements,
-                resource_url,
-                cfg.description.clone(),
-                Some("Invalid payment signature".to_string()),
-            );
+    let Ok(payload) = decode_payment_payload(&header_value) else {
+        tracing::warn!(
+            uri = %resource_url,
+            "Failed to decode payment signature header; returning 402"
+        );
+        if let Some(metrics) = &cfg.metrics {
+            metrics.record_challenge();
         }
+        return payment_required_response(
+            requirements,
+            resource_url,
+            cfg.description.clone(),
+            Some("Invalid payment signature".to_owned()),
+        );
     };
 
     if payload.accepted != requirements {
@@ -275,7 +279,7 @@ pub async fn x402_payment(
             requirements,
             resource_url,
             cfg.description.clone(),
-            Some("No matching payment requirements".to_string()),
+            Some("No matching payment requirements".to_owned()),
         );
     }
 
@@ -378,7 +382,7 @@ pub async fn x402_payment(
     if !verify.is_valid {
         let reason = verify
             .invalid_reason
-            .unwrap_or_else(|| "Payment invalid".to_string());
+            .unwrap_or_else(|| "Payment invalid".to_owned());
         tracing::warn!(
             uri = %resource_url,
             reason = %reason,
@@ -468,7 +472,7 @@ pub async fn x402_payment(
                 error_message: None,
                 payer: None,
                 transaction: String::new(),
-                network: cfg.chain.network.to_string(),
+                network: cfg.chain.network.to_owned(),
                 amount: None,
             };
             return settlement_failure_response(&failure);
@@ -527,7 +531,7 @@ pub async fn x402_payment(
         .and_then(|v| v.to_str().ok())
     {
         Some(existing) if !existing.is_empty() => format!("{existing}, private"),
-        _ => "private".to_string(),
+        _ => "private".to_owned(),
     };
     parts.headers.insert(
         header::CACHE_CONTROL,
@@ -572,10 +576,10 @@ mod tests {
 
     fn config(chain: KiteChain, price: &str) -> Arc<PaymentConfig> {
         Arc::new(PaymentConfig {
-            pay_to: PAY_TO.to_string(),
+            pay_to: PAY_TO.to_owned(),
             chain,
-            price_usd: price.to_string(),
-            description: "Unit test service".to_string(),
+            price_usd: price.to_owned(),
+            description: "Unit test service".to_owned(),
             facilitator: dead_facilitator(),
             expiration_guard: None,
             metrics: None,
@@ -859,8 +863,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::PAYMENT_REQUIRED);
         let err = decode_header(&resp, "PAYMENT-REQUIRED")["error"]
             .as_str()
-            .unwrap()
-            .to_string();
+            .unwrap().to_owned();
         assert!(err.starts_with("facilitator verify unavailable: "), "{err}");
         assert_eq!(reached.load(Ordering::SeqCst), 0);
     }

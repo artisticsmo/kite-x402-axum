@@ -5,6 +5,10 @@ edition.workspace = true
 rust-version.workspace = true
 publish = false
 
+[lints]
+workspace = true
+
+
 [dependencies]
 kite-x402-axum = { path = "../kite-x402-axum" }
 axum = { version = "0.8", features = ["http1", "tokio"] }

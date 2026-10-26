@@ -74,7 +74,7 @@ impl Service {
         env
     }
 
-    async fn start(env: Vec<(String, String)>) -> Service {
+    async fn start(env: Vec<(String, String)>) -> Self {
         let port: u16 = env
             .iter()
             .find(|(k, _)| k == "PORT")
@@ -94,7 +94,7 @@ impl Service {
             stdout.read_to_string(&mut output).unwrap();
             output
         });
-        let mut svc = Service {
+        let mut svc = Self {
             child,
             port,
             logs: Some(logs),
@@ -110,7 +110,7 @@ impl Service {
         svc
     }
 
-    async fn start_with(mocks: &Mocks) -> Service {
+    async fn start_with(mocks: &Mocks) -> Self {
         Self::start(Self::base_env(mocks, free_port())).await
     }
 

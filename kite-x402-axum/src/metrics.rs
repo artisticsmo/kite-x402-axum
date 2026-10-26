@@ -24,19 +24,29 @@ pub struct PaymentMetrics {
 /// Point-in-time snapshot of x402 payment statistics, serializable to JSON.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PaymentMetricsSnapshot {
+    /// Total requests seen by the middleware.
     pub requests_total: u64,
+    /// Total `402 Payment Required` challenges issued.
     pub challenges_total: u64,
+    /// Payments successfully verified.
     pub verifications_success: u64,
+    /// Payments that failed verification.
     pub verifications_failed: u64,
+    /// Payments successfully settled.
     pub settlements_success: u64,
+    /// Settlement attempts that failed.
     pub settlements_failed: u64,
+    /// Cumulative settlement latency in milliseconds.
     pub total_settlement_latency_ms: u64,
+    /// Mean settlement latency in milliseconds.
     pub avg_settlement_latency_ms: f64,
+    /// Fraction of settlements that succeeded, in `0.0..=1.0`.
     pub settlement_success_rate: f64,
 }
 
 impl PaymentMetrics {
     /// Creates a new metrics collector with zeroed counters.
+    #[must_use] 
     pub fn new() -> Self {
         Self::default()
     }

@@ -10,7 +10,9 @@ use std::sync::{Arc, RwLock};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum IpFilterAction {
+    /// The IP is allowed through.
     Allow,
+    /// The IP is denied.
     Deny,
 }
 
@@ -20,11 +22,17 @@ pub enum FirewallRule {
     /// Matches an exact IPv4 or IPv6 address.
     Exact(IpAddr),
     /// Matches an IPv4 CIDR subnet (network address and prefix length 0..=32).
-    SubnetV4 { network: Ipv4Addr, prefix: u8 },
+    SubnetV4 {
+        /// Network address of the subnet.
+        network: Ipv4Addr,
+        /// Prefix length (0..=32).
+        prefix: u8,
+    },
 }
 
 impl FirewallRule {
     /// Creates a CIDR subnet rule for IPv4.
+    #[must_use] 
     pub fn subnet_v4(network: Ipv4Addr, prefix: u8) -> Self {
         Self::SubnetV4 {
             network,
@@ -33,10 +41,11 @@ impl FirewallRule {
     }
 
     /// Checks if a client IP matches this rule.
+    #[must_use] 
     pub fn matches(&self, client_ip: &IpAddr) -> bool {
         match (self, client_ip) {
-            (FirewallRule::Exact(rule_ip), ip) => rule_ip == ip,
-            (FirewallRule::SubnetV4 { network, prefix }, IpAddr::V4(client_v4)) => {
+            (Self::Exact(rule_ip), ip) => rule_ip == ip,
+            (Self::SubnetV4 { network, prefix }, IpAddr::V4(client_v4)) => {
                 if *prefix == 0 {
                     return true;
                 }
@@ -79,6 +88,7 @@ pub struct IpFirewall {
 
 impl IpFirewall {
     /// Creates a new firewall with the given configuration.
+    #[must_use] 
     pub fn new(config: IpFirewallConfig) -> Self {
         Self {
             config: Arc::new(RwLock::new(config)),
@@ -86,6 +96,7 @@ impl IpFirewall {
     }
 
     /// Evaluates whether an incoming IP is allowed or denied.
+    #[must_use] 
     pub fn evaluate(&self, ip: &IpAddr) -> IpFilterAction {
         let config = self.config.read().expect("firewall rwlock poisoned");
 
@@ -111,6 +122,7 @@ impl IpFirewall {
     }
 
     /// Helper that returns true if the IP is allowed.
+    #[must_use] 
     pub fn is_allowed(&self, ip: &IpAddr) -> bool {
         self.evaluate(ip) == IpFilterAction::Allow
     }

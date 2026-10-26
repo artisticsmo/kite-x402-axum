@@ -30,7 +30,7 @@ fn normalize_ip(ip: IpAddr) -> IpAddr {
             .to_ipv4_mapped()
             .map(IpAddr::V4)
             .unwrap_or(IpAddr::V6(ip)),
-        ip => ip,
+        ip @ IpAddr::V4(_) => ip,
     }
 }
 
@@ -154,14 +154,14 @@ pub(crate) struct TokenBucketRateLimiter {
 }
 
 impl TokenBucketRateLimiter {
-    pub fn new(config: RateLimiterConfig) -> Self {
+    pub(crate) fn new(config: RateLimiterConfig) -> Self {
         Self {
             config,
             buckets: Mutex::new(BucketStore::default()),
         }
     }
 
-    pub fn acquire(&self, client_ip: IpAddr, now: Instant) -> Result<u64, RateLimitRejection> {
+    pub(crate) fn acquire(&self, client_ip: IpAddr, now: Instant) -> Result<u64, RateLimitRejection> {
         let client_ip = normalize_ip(client_ip);
         let mut store = self.buckets.lock().unwrap();
         // Bound maintenance work as well as memory during a burst of new clients.
@@ -186,7 +186,7 @@ impl TokenBucketRateLimiter {
         // Concurrent callers can obtain timestamps in a different order than the lock.
         let now = now.max(bucket.last_refill);
         let elapsed = now.duration_since(bucket.last_refill).as_secs_f64();
-        bucket.tokens = (bucket.tokens + elapsed * self.config.rps).min(self.config.burst);
+        bucket.tokens = elapsed.mul_add(self.config.rps, bucket.tokens).min(self.config.burst);
         bucket.last_refill = now;
         let result = if bucket.tokens >= 1.0 {
             bucket.tokens -= 1.0;
@@ -230,16 +230,14 @@ pub(crate) async fn rate_limit_middleware(
             )
                 .into_response();
         };
-        let client_ip = match client_ip(req.headers(), peer.ip(), &limiter.config.trusted_proxies) {
-            Ok(ip) => ip,
-            Err(()) => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    [("cache-control", "no-store")],
-                    Json(json!({ "error": "invalid_forwarded_ip" })),
-                )
-                    .into_response()
-            }
+        let Ok(client_ip) = client_ip(req.headers(), peer.ip(), &limiter.config.trusted_proxies)
+        else {
+            return (
+                StatusCode::BAD_REQUEST,
+                [("cache-control", "no-store")],
+                Json(json!({ "error": "invalid_forwarded_ip" })),
+            )
+                .into_response();
         };
 
         match limiter.acquire(client_ip, Instant::now()) {
