@@ -16,7 +16,13 @@ fn test_verification_cache_get_and_insert() {
 #[test]
 fn test_verification_cache_expiration() {
     let cache = VerificationCacheStore::new(Duration::from_millis(10));
-    cache.insert("sig_hash_exp", true, "0xPayer", "10.00", Some(Duration::from_millis(10)));
+    cache.insert(
+        "sig_hash_exp",
+        true,
+        "0xPayer",
+        "10.00",
+        Some(Duration::from_millis(10)),
+    );
 
     std::thread::sleep(Duration::from_millis(25));
     assert!(cache.get("sig_hash_exp").is_none());

@@ -3,9 +3,9 @@
 //! Records confirmed on-chain settlements, transaction hashes, amounts, and
 //! payer metadata for post-settlement reconciliation and auditing.
 
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
-use serde::{Deserialize, Serialize};
 
 /// An immutable record of an x402 payment settlement event.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -84,7 +84,11 @@ impl SettlementLedger {
 
         let payer_key = record.payer.to_lowercase();
         inner.by_tx.insert(record.tx_hash.clone(), record.clone());
-        inner.by_payer.entry(payer_key).or_default().push(record.clone());
+        inner
+            .by_payer
+            .entry(payer_key)
+            .or_default()
+            .push(record.clone());
         inner.records.push_back(record);
     }
 
