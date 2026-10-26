@@ -39,7 +39,14 @@ impl VerificationCacheStore {
         None
     }
 
-    pub fn insert(&self, signature_hash: &str, is_valid: bool, payer: &str, amount: &str, custom_ttl: Option<Duration>) {
+    pub fn insert(
+        &self,
+        signature_hash: &str,
+        is_valid: bool,
+        payer: &str,
+        amount: &str,
+        custom_ttl: Option<Duration>,
+    ) {
         let mut map = self.entries.lock().unwrap();
         let ttl = custom_ttl.unwrap_or(self.default_ttl);
         map.insert(

@@ -52,10 +52,22 @@ impl CorsSecurityGuard {
 
         Some(vec![
             ("Access-Control-Allow-Origin", origin.to_string()),
-            ("Access-Control-Allow-Methods", "GET, POST, OPTIONS".to_string()),
-            ("Access-Control-Allow-Headers", "Content-Type, Authorization, PAYMENT-SIGNATURE".to_string()),
-            ("Access-Control-Expose-Headers", "PAYMENT-REQUIRED, PAYMENT-RESPONSE".to_string()),
-            ("Access-Control-Max-Age", self.config.max_age_secs.to_string()),
+            (
+                "Access-Control-Allow-Methods",
+                "GET, POST, OPTIONS".to_string(),
+            ),
+            (
+                "Access-Control-Allow-Headers",
+                "Content-Type, Authorization, PAYMENT-SIGNATURE".to_string(),
+            ),
+            (
+                "Access-Control-Expose-Headers",
+                "PAYMENT-REQUIRED, PAYMENT-RESPONSE".to_string(),
+            ),
+            (
+                "Access-Control-Max-Age",
+                self.config.max_age_secs.to_string(),
+            ),
         ])
     }
 }

@@ -168,7 +168,11 @@ impl WebhookDispatcher {
             .as_millis() as u64;
 
         let mut state = self.state.write().expect("lock poisoned");
-        if let Some(pos) = state.queue.iter().position(|r| r.delivery_id == delivery_id) {
+        if let Some(pos) = state
+            .queue
+            .iter()
+            .position(|r| r.delivery_id == delivery_id)
+        {
             let mut record = state.queue.remove(pos).unwrap();
             record.attempts += 1;
             record.last_attempt_ms = Some(now);
@@ -274,12 +278,14 @@ mod tests {
         );
 
         // First attempt fails -> requeued
-        let d1 = dispatcher.record_attempt_result(ids[0], false, Some(500), Some("Server error".into()));
+        let d1 =
+            dispatcher.record_attempt_result(ids[0], false, Some(500), Some("Server error".into()));
         assert_eq!(d1.unwrap().status, DeliveryStatus::Failed);
         assert_eq!(dispatcher.pending_count(), 1);
 
         // Second attempt fails (exceeds max_retries = 1) -> Abandoned
-        let d2 = dispatcher.record_attempt_result(ids[0], false, Some(500), Some("Server error".into()));
+        let d2 =
+            dispatcher.record_attempt_result(ids[0], false, Some(500), Some("Server error".into()));
         assert_eq!(d2.unwrap().status, DeliveryStatus::Abandoned);
         assert_eq!(dispatcher.pending_count(), 0);
         assert_eq!(dispatcher.history_count(), 1);

@@ -38,8 +38,13 @@ pub struct CachedResponse {
 
 #[derive(Debug)]
 enum Entry {
-    InProgress { started_at: Instant },
-    Completed { response: CachedResponse, cached_at: Instant },
+    InProgress {
+        started_at: Instant,
+    },
+    Completed {
+        response: CachedResponse,
+        cached_at: Instant,
+    },
 }
 
 /// Outcome of attempting to acquire an idempotency key slot.
@@ -87,7 +92,10 @@ impl IdempotencyCache {
                     }
                     // In-progress entry expired/timed out; allow re-acquisition.
                 }
-                Entry::Completed { response, cached_at } => {
+                Entry::Completed {
+                    response,
+                    cached_at,
+                } => {
                     if now.duration_since(*cached_at) < self.config.ttl {
                         return AcquireResult::Cached(response.clone());
                     }
@@ -108,21 +116,12 @@ impl IdempotencyCache {
             });
         }
 
-        entries.insert(
-            key.to_string(),
-            Entry::InProgress { started_at: now },
-        );
+        entries.insert(key.to_string(), Entry::InProgress { started_at: now });
         AcquireResult::Acquired
     }
 
     /// Marks an idempotency key as completed and stores the response.
-    pub fn complete(
-        &self,
-        key: &str,
-        status: u16,
-        headers: Vec<(String, String)>,
-        body: Vec<u8>,
-    ) {
+    pub fn complete(&self, key: &str, status: u16, headers: Vec<(String, String)>, body: Vec<u8>) {
         let mut entries = self.entries.lock().expect("idempotency cache poisoned");
         entries.insert(
             key.to_string(),
@@ -147,7 +146,10 @@ impl IdempotencyCache {
 
     /// Returns the number of tracked entries.
     pub fn len(&self) -> usize {
-        self.entries.lock().expect("idempotency cache poisoned").len()
+        self.entries
+            .lock()
+            .expect("idempotency cache poisoned")
+            .len()
     }
 
     /// Returns whether the cache is empty.
